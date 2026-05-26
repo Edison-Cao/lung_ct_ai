@@ -68,3 +68,4 @@ Current Accuracy:
 
 Edison
 NTU Future AI + Healthcare Direction
+# lung_ct_ai
