@@ -11,8 +11,14 @@ device = torch.device("cpu")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, "../notebooks/lung_ct_unet.pth")
 
-model = UNet(spatial_dims=3, in_channels=1, out_channels=1, channels=(16,32,64,128), strides=(2,2,2), num_res_units=2).to(device)
-model.load_state_dict(torch.load(model_path, map_location="cpu"))
+model = UNet(spatial_dims=3,in_channels=1,out_channels=1,channels=(16,32,64,128),strides=(2,2,2),num_res_units=2).to(device)
+
+try:
+    model.load_state_dict(torch.load(model_path, map_location="cpu"))
+    st.success("Model loaded successfully!")
+except:
+    st.warning("Model file not found. Running demo mode.")
+
 model.eval()
 
 st.title("AI-Powered Lung CT Analysis")
