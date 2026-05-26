@@ -69,3 +69,31 @@ Current Accuracy:
 Edison
 NTU Future AI + Healthcare Direction
 # lung_ct_ai
+
+---
+
+## Model Performance
+
+- Accuracy: 84.84%
+- Framework: PyTorch
+- Dataset: MedMNIST OrganMNIST3D
+- Model: 3D CNN
+
+---
+
+## Tech Stack
+
+- Python
+- PyTorch
+- MONAI
+- Streamlit
+- Matplotlib
+
+---
+
+## Future Improvements
+
+- Grad-CAM visualization
+- Attention mechanism
+- Cloud deployment
+- Multi-class classification
