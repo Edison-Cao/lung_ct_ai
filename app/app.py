@@ -42,8 +42,7 @@ if uploaded_file is not None:
 
     with torch.no_grad():
         output = model(ct_tensor)
-        pred = (ct_tensor > 0.8).float()
-
+        pred = (ct_tensor  > 0.8).float()
     ct_np = ct_tensor.cpu().numpy()
     pred_np = pred.cpu().numpy()
 
