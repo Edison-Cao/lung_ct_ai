@@ -1,4 +1,8 @@
-![Banner](screenshots/banner.png)
+<p align="center">
+
+  <img src="assets/banner.png" width="100%">
+
+</p>
 # 🫁 AI Lung CT Assistant
 
 Deep Learning Powered Medical Imaging Platform
