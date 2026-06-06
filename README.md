@@ -1,3 +1,4 @@
+![Banner](screenshots/banner.png)
 # 🫁 AI Lung CT Assistant
 
 Deep Learning Powered Medical Imaging Platform
