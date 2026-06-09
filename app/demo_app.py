@@ -25,7 +25,6 @@ st.set_page_config(
 # -----------------------
 # MAIN HEADER
 # -----------------------
-
 st.markdown(
     """
     # 🫁 AI Lung CT Assistant
@@ -33,7 +32,6 @@ st.markdown(
     ### Deep Learning Powered Medical Imaging Platform
     """
 )
-
 # -----------------------
 # SIDEBAR
 # -----------------------
@@ -142,10 +140,55 @@ transform = Compose([
     Resize((64, 128, 128)),
     EnsureType()
 ])
+# -----------------------
+# PATIENT INFORMATION
+# -----------------------
 
+st.header("Patient Clinical Information")
+
+col1, col2 = st.columns(2)
+
+with col1:
+
+    patient_age = st.number_input(
+        "Patient Age",
+        min_value=1,
+        max_value=120,
+        value=45
+    )
+
+    patient_gender = st.selectbox(
+        "Gender",
+        ["Male", "Female"]
+    )
+
+with col2:
+
+    smoking_history = st.selectbox(
+        "Smoking History",
+        ["No", "Former Smoker", "Current Smoker"]
+    )
+
+    symptoms = st.multiselect(
+        "Symptoms",
+        [
+            "Cough",
+            "Chest Pain",
+            "Shortness of Breath",
+            "Fever",
+            "Fatigue"
+        ]
+    )
+
+st.markdown("---")
 # -----------------------
 # DEMO IMAGE
 # -----------------------
+probability = None
+output = None
+heatmap = None
+slice_idx = 0
+ct_data = None
 
 uploaded_file = st.file_uploader(
     "Upload CT Scan",
@@ -153,7 +196,38 @@ uploaded_file = st.file_uploader(
 )
 
 if uploaded_file is not None:
+    left_col, right_col = st.columns([1, 2])
+    # -----------------------
+    # KPI DASHBOARD
+    # -----------------------
 
+    kpi1, kpi2, kpi3, kpi4 = st.columns(4)
+
+    with kpi1:
+        st.metric(
+            "Patient Age",
+            patient_age
+        )
+
+    with kpi2:
+        st.metric(
+            "Smoking Risk",
+            smoking_history
+        )
+
+    with kpi3:
+        st.metric(
+            "Model Status",
+            "Online"
+        )
+
+    with kpi4:
+        st.metric(
+            "CT Status",
+            "Uploaded"
+        )
+
+    st.markdown("---")
     st.success("CT uploaded successfully!")
 
     # save temp file
@@ -169,24 +243,25 @@ if uploaded_file is not None:
     ct_data = ct_scan.get_fdata()
 
     st.write("CT Shape:", ct_data.shape)
-    # -----------------------
-    # CT SLICE VIEWER
-    # -----------------------
+    with right_col:
+        # -----------------------
+        # CT SLICE VIEWER
+        # -----------------------
 
-    slice_idx = st.slider(
-         "Select CT Slice",
-          0,
-         ct_data.shape[2] - 1,
-         ct_data.shape[2] // 2
-)
+        slice_idx = st.slider(
+             "Select CT Slice",
+              0,
+             ct_data.shape[2] - 1,
+             ct_data.shape[2] // 2
+        )
 
-    fig, ax = plt.subplots()
+        fig, ax = plt.subplots()
 
-    ax.imshow(ct_data[:, :, slice_idx].T, cmap="gray")
+        ax.imshow(ct_data[:, :, slice_idx].T, cmap="gray")
 
-    ax.set_title(f"CT Slice {slice_idx}")
+        ax.set_title(f"CT Slice {slice_idx}")
 
-    st.pyplot(fig)
+        st.pyplot(fig)
     st.markdown("---")
     # preprocess
     ct_tensor = transform(ct_data)
@@ -205,41 +280,75 @@ if uploaded_file is not None:
 
       output = model(ct_tensor)
 
-      probability = torch.sigmoid(output).mean().item()
+     probability = torch.sigmoid(output).mean().item()
     
     # -----------------------
     # AI SCORE
     # -----------------------
+    with left_col:
+        st.metric(label="AI Prediction Score",value=f"{probability:.2%}")
 
-    st.metric(
-        label="AI Prediction Score",
-        value=f"{probability:.2%}"
-    )
+        if probability > 0.5:
 
-    if probability > 0.5:
+          st.error( "⚠️ High Risk Detected")
 
-       st.error(
-           "⚠️ High Risk Detected"
-        )
-
-    else:
+        else:
        
-       st.success(
-           "✅ Low Risk Detected"
-        )
+          st.success("✅ Low Risk Detected")
 
-    st.progress(float(probability))
+        st.progress(float(probability))
     
-    heatmap = output.squeeze().detach().numpy()
-    heatmap_slice = heatmap[heatmap.shape[0] // 2]
+        # -----------------------
+        # AI CLINICAL SUMMARY
+        # -----------------------
 
-    fig2, ax2 = plt.subplots()
+        st.markdown("---")
 
-    ax2.imshow(heatmap_slice, cmap="hot")
+        st.subheader("AI Clinical Summary")
 
-    ax2.set_title("AI Attention Heatmap")
+        if probability is None:
+            st.info("📂 Please upload a CT scan above to generate the AI clinical summary.")
+        else:
+            summary = []
 
-    st.pyplot(fig2)
+        # risk level
+        if probability > 0.5:
+            summary.append("Possible pulmonary abnormality detected.")
+        else:
+            summary.append("No obvious high-risk abnormality detected.")
+
+        # smoking history
+        if smoking_history == "Current Smoker":
+            summary.append("Smoking history may increase lung disease risk.")
+
+        # symptoms
+        if len(symptoms) > 0:
+            summary.append(f"Reported symptoms: {', '.join(symptoms)}.")
+
+        # recommendation
+        summary.append("Further clinical review by a radiologist is recommended.")
+
+        # display summary
+        for item in summary:
+            st.write("•", item)
+
+# -----------------------
+# HEATMAP
+# -----------------------
+if output is not None and ct_data is not None:
+ 
+    st.markdown("---")
+    with right_col:
+        heatmap = output.squeeze().detach().numpy()
+        heatmap_slice = heatmap[heatmap.shape[0] // 2]
+
+        fig2, ax2 = plt.subplots()
+
+        ax2.imshow(heatmap_slice, cmap="hot")
+
+        ax2.set_title("AI Attention Heatmap")
+
+        st.pyplot(fig2)
     st.markdown("---")
     # -----------------------
     # -----------------------
@@ -248,43 +357,31 @@ if uploaded_file is not None:
 
     # 获取 heatmap 切片总数
     heatmap_depth = heatmap.shape[0]
+    with right_col:
+        # 防止索引越界
+        safe_slice_idx = min(slice_idx, heatmap_depth - 1)
 
-    # 防止索引越界
-    safe_slice_idx = min(slice_idx, heatmap_depth - 1)
+        # 获取CT切片
+        overlay_slice = ct_data[:, :, safe_slice_idx].T
 
-    # 获取CT切片
-    overlay_slice = ct_data[:, :, safe_slice_idx].T
+        # 获取heatmap切片
+        heatmap_overlay = heatmap[safe_slice_idx]
 
-    # 获取heatmap切片
-    heatmap_overlay = heatmap[safe_slice_idx]
+        # 创建图像
+        fig3, ax3 = plt.subplots()
 
-    # 创建图像
-    fig3, ax3 = plt.subplots()
+        # 显示CT
+        ax3.imshow(overlay_slice,cmap="gray")
 
-    # 显示CT
-    ax3.imshow(
-        overlay_slice,
-        cmap="gray"
-     )
+        # 叠加Heatmap
+        ax3.imshow(heatmap_overlay,cmap="hot",alpha=0.4)
 
-    # 叠加Heatmap
-    ax3.imshow(
-        heatmap_overlay,
-        cmap="hot",
-        alpha=0.4
-     )
+        # 标题
+        ax3.set_title(f"AI Lesion Overlay - Slice {safe_slice_idx}")
 
-    # 标题
-    ax3.set_title(
-        f"AI Lesion Overlay - Slice {safe_slice_idx}"
-     )
-
-    # Streamlit显示
-    st.pyplot(fig3)
+        # Streamlit显示
+        st.pyplot(fig3)
     st.markdown("---")
-    # DISCLAIMER
-
-    # -----------------------
 
 
 # -----------------------
